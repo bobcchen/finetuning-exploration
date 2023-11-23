@@ -2,5 +2,6 @@ __pycache__/
 .ipynb_checkpoints
 .idea/
 
+CodeLlama-7b-Python/
 model/
 dataset/
