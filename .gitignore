@@ -5,3 +5,5 @@ __pycache__/
 CodeLlama-7b-Python/
 model-*/
 dataset/
+
+**/outputs/
