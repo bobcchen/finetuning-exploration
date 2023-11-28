@@ -3,5 +3,5 @@ __pycache__/
 .idea/
 
 CodeLlama-7b-Python/
-model/
+model-*/
 dataset/
