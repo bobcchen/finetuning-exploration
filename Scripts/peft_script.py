@@ -113,7 +113,7 @@ def main():
 
     # load model and tokenizer
     print('Loading model and tokenizer...')
-    model_path = '../model-7b/'
+    model_path = 'model-7b/'
 
     model = LlamaForCausalLM.from_pretrained(
         model_path, quantization_config=bnb_config, device_map='auto',
@@ -144,7 +144,7 @@ def main():
 
     # load dataset
     print('Loading dataset...')
-    dataset_path = '../dataset/english_quotes.jsonl'
+    dataset_path = 'dataset/english_quotes.jsonl'
 
     data = load_dataset("json", data_files=dataset_path, split='train[:20%]')  # use only 20%
     data = data.map(lambda samples: tokenizer(samples["quote"]), batched=True)

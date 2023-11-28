@@ -1,0 +1,18 @@
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update
+RUN apt-get install -y python3.10 
+RUN apt-get install -y python3-pip
+
+WORKDIR /app
+
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir torch torchvision torchaudio torchviz --extra-index-url https://download.pytorch.org/whl/cu118
+RUN pip install -r requirements.txt
+
+COPY model-7b/ /app/model-7b/
+COPY dataset/ /app/dataset/
+
+COPY Scripts/ /app/
+
+CMD accelerate launch --config_file accelerate_config.yml peft_script.py
