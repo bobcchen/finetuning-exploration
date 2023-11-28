@@ -5,7 +5,7 @@ RUN apt-get install -y python3.10
 RUN apt-get install -y python3-pip
 
 RUN pip install --no-cache-dir torch torchvision torchaudio torchviz --extra-index-url https://download.pytorch.org/whl/cu118
-RUN pip install bitsandbytes transformers peft accelerate sentencepiece datasets scipy
+RUN pip install bitsandbytes transformers peft accelerate sentencepiece datasets scipy evaluate
 
 RUN pip install jupyter
 EXPOSE 8888
