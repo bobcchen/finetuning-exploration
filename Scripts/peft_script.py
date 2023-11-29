@@ -26,6 +26,7 @@ def print_trainable_parameters(model):
 def compute_perplexity(model, tokenizer, predictions, batch_size: int = 16, add_start_token: bool = True, device=None,
                        max_length=None):
     # from https://huggingface.co/spaces/evaluate-metric/perplexity/blob/main/perplexity.py
+    # modified to ignore device as it will be handled by accelerate
 
     # if batch_size > 1 (which generally leads to padding being required), and
     # if there is not an already assigned pad_token, assign an existing
@@ -56,7 +57,7 @@ def compute_perplexity(model, tokenizer, predictions, batch_size: int = 16, add_
         max_length=max_tokenized_len,
         return_tensors="pt",
         return_attention_mask=True,
-    ).to(device)
+    )
 
     encoded_texts = encodings["input_ids"]
     attn_masks = encodings["attention_mask"]
@@ -78,10 +79,10 @@ def compute_perplexity(model, tokenizer, predictions, batch_size: int = 16, add_
         attn_mask = attn_masks[start_index:end_index]
 
         if add_start_token:
-            bos_tokens_tensor = torch.tensor([[tokenizer.bos_token_id]] * encoded_batch.size(dim=0)).to(device)
+            bos_tokens_tensor = torch.tensor([[tokenizer.bos_token_id]] * encoded_batch.size(dim=0))
             encoded_batch = torch.cat([bos_tokens_tensor, encoded_batch], dim=1)
             attn_mask = torch.cat(
-                [torch.ones(bos_tokens_tensor.size(), dtype=torch.int64).to(device), attn_mask], dim=1
+                [torch.ones(bos_tokens_tensor.size(), dtype=torch.int64), attn_mask], dim=1
             )
 
         labels = encoded_batch
@@ -105,16 +106,29 @@ def compute_perplexity(model, tokenizer, predictions, batch_size: int = 16, add_
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default='model-7b')
+    parser.add_argument('--model_path', type=str, default='model-7b', choices=['model-7b', 'model-13b'])
+    parser.add_argument('--perform_qlora', action='store_true')
+    parser.add_argument('--use_full_precision', action='store_true')
     args = parser.parse_args()
 
     # create quantization config
     print('Creating quantization config...')
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",  # use normalized 4bit float for QLoRA
-        bnb_4bit_compute_dtype=torch.float16  # can use torch.bfloat16 on newer gpus
-    )
+    if args.perform_qlora:
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",  # use normalized 4bit float for QLoRA
+            bnb_4bit_compute_dtype=torch.float16  # can use torch.bfloat16 on newer gpus
+        )
+    else:
+        if args.use_full_precision:
+            print('using full precision...')
+            torch_dtype = torch.float32
+        else:
+            torch_dtype = torch.float16
+        bnb_config = BitsAndBytesConfig(
+            torch_dtype=torch_dtype
+        )
+    print(bnb_config)
 
     # load model and tokenizer
     print(f'Loading model and tokenizer from {args.model_path}...')
@@ -131,20 +145,23 @@ def main():
 
     print(f'initial model device map: {model.hf_device_map}')
 
-    # create lora
-    print('Creating LoRA...')
-    config = LoraConfig(
-        r=16,
-        lora_alpha=32,
-        lora_dropout=0.1,
-        bias="none",
-        task_type="CAUSAL_LM"
-    )
+    if args.perform_qlora:
+        # create lora
+        print('Creating LoRA...')
+        config = LoraConfig(
+            r=16,
+            lora_alpha=32,
+            lora_dropout=0.1,
+            bias="none",
+            task_type="CAUSAL_LM"
+        )
 
-    model = get_peft_model(model, config)
+        model = get_peft_model(model, config)
 
-    print(f'model device map after adding lora: {model.hf_device_map}')
+        print(f'model device map after adding lora: {model.hf_device_map}')
+
     print_trainable_parameters(model)
+    print(model)
 
     # load dataset
     print('Loading dataset...')
@@ -153,12 +170,12 @@ def main():
     data = load_dataset("json", data_files=dataset_path, split='train[:20%]')  # use only 20%
     data = data.map(lambda samples: tokenizer(samples["quote"]), batched=True)
     data = data.train_test_split(test_size=0.5)  # use 10% for training due to OOM on 16gb gpu; 10% for eval on cpu
-    train_data = data['train'].with_format("torch", device='cuda')
+    train_data = data['train'].with_format("torch")
     eval_strings = [s for s in data['test']['quote'] if s != '']
 
     # calculate perplexity before training
     print('Calculating perplexity before training...')
-    original_perplexity = compute_perplexity(model, tokenizer, predictions=eval_strings, device='cuda')
+    original_perplexity = compute_perplexity(model, tokenizer, predictions=eval_strings)
 
     # train model
     print('Training...')
@@ -182,7 +199,7 @@ def main():
 
     # calculate perplexity after training
     print('Calculating perplexity after training...')
-    perplexity = compute_perplexity(model, tokenizer, predictions=eval_strings, device='cuda')
+    perplexity = compute_perplexity(model, tokenizer, predictions=eval_strings)
 
     # save metrics
     print('Saving metrics...')
