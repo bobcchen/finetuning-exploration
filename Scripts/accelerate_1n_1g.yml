@@ -1,13 +1,13 @@
 compute_environment: LOCAL_MACHINE
 debug: true
-distributed_type: 'MULTI_GPU'
+distributed_type: 'NO' # or MULTI_GPU
 downcast_bf16: 'no' # requires A100 or newer
 gpu_ids: all
 machine_rank: 0
 main_training_function: main
 mixed_precision: fp16 # {no,fp16,bf16,fp8} but seems to have no effect, control when loading model
 num_machines: 1
-num_processes: 4 # needs to match no of gpu; can be overwritten in cli
+num_processes: 1
 rdzv_backend: static
 same_network: true
 use_cpu: false
