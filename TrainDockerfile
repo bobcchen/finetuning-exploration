@@ -16,4 +16,4 @@ COPY dataset/ /app/dataset/
 
 COPY Scripts/ /app/
 
-CMD accelerate launch --config_file accelerate_config.yml peft_script.py
+CMD accelerate launch --config_file accelerate_1n_1g.yml peft_script.py
