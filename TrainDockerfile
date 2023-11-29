@@ -11,6 +11,7 @@ RUN pip install --no-cache-dir torch torchvision torchaudio torchviz --extra-ind
 RUN pip install -r requirements.txt
 
 COPY model-7b/ /app/model-7b/
+COPY model-13b/ /app/model-13b/
 COPY dataset/ /app/dataset/
 
 COPY Scripts/ /app/

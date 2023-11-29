@@ -1,3 +1,4 @@
+import argparse
 import torch
 import transformers
 from transformers import BitsAndBytesConfig, LlamaTokenizer, LlamaForCausalLM
@@ -103,6 +104,10 @@ def compute_perplexity(model, tokenizer, predictions, batch_size: int = 16, add_
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model_path', type=str, default='model-7b')
+    args = parser.parse_args()
+
     # create quantization config
     print('Creating quantization config...')
     bnb_config = BitsAndBytesConfig(
@@ -112,16 +117,15 @@ def main():
     )
 
     # load model and tokenizer
-    print('Loading model and tokenizer...')
-    model_path = 'model-7b/'
+    print(f'Loading model and tokenizer from {args.model_path}...')
 
     model = LlamaForCausalLM.from_pretrained(
-        model_path, quantization_config=bnb_config, device_map='auto',
+        args.model_path, quantization_config=bnb_config, device_map='auto',
     )
     model.config.use_cache = False  # for training
     model.config.pretraining_tp = 1
 
-    tokenizer = LlamaTokenizer.from_pretrained(model_path)
+    tokenizer = LlamaTokenizer.from_pretrained(args.model_path)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
 
