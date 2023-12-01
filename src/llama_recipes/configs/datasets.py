@@ -9,7 +9,7 @@ class samsum_dataset:
     dataset: str =  "samsum_dataset"
     train_split: str = "train"
     test_split: str = "validation"
-    dataset_cache_dir: str = "dataset"
+    dataset_path: str = "dataset"
     split_slice: str = None
     
     

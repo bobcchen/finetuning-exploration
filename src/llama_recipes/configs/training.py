@@ -23,7 +23,7 @@ class train_config:
 
     # dataset related
     dataset: str="samsum_dataset"
-    dataset_cache_dir: str="dataset"
+    dataset_path: str= "dataset"
     split_slice: str=None # use to limit dataset size to prevent oom; 10 for 10 samples in split or 10% for 10% of samples in split
     batching_strategy: str="padding" #alternative: packing
     context_length: int=4096 #specific to packing
