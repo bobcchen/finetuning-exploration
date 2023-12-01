@@ -7,3 +7,4 @@ scipy==1.11.4
 sentencepiece==0.1.99
 transformers==4.35.2
 py7zr==0.20.8 # for samsun dataset
+fire==0.5.0 # for cli

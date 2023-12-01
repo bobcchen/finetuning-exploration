@@ -4,6 +4,7 @@
 import os
 from pkg_resources import packaging
 
+import fire
 import random
 import torch
 import torch.optim as optim
@@ -249,4 +250,4 @@ def main(**kwargs):
         [print(f'Key: {k}, Value: {v}') for k, v in results.items()]
 
 if __name__ == "__main__":
-    main()
+    fire.Fire(main)
