@@ -6,3 +6,4 @@ peft==0.6.2
 scipy==1.11.4
 sentencepiece==0.1.99
 transformers==4.35.2
+py7zr==0.20.8 # for samsun dataset

@@ -9,6 +9,7 @@ class samsum_dataset:
     dataset: str =  "samsum_dataset"
     train_split: str = "train"
     test_split: str = "validation"
+    cache_dir: str = "../dataset"
     
     
 @dataclass
