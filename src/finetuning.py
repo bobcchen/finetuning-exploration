@@ -7,7 +7,7 @@ from pkg_resources import packaging
 import random
 import torch
 import torch.optim as optim
-from peft import get_peft_model, prepare_model_for_int8_training
+from peft import get_peft_model, prepare_model_for_kbit_training
 from torch.distributed.fsdp import (
     FullyShardedDataParallel as FSDP,
 )
@@ -17,6 +17,7 @@ from transformers import (
     LlamaForCausalLM,
     LlamaTokenizer,
     LlamaConfig,
+    BitsAndBytesConfig,
 )
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer
 
@@ -95,9 +96,16 @@ def main(**kwargs):
                 model = LlamaForCausalLM(llama_config)
 
     else:
+        if train_config.quantization:
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.float16 if train_config.use_fp16 else torch.float32 # can use torch.bfloat16 on newer gpus
+            )
+
         model = LlamaForCausalLM.from_pretrained(
             train_config.model_name,
-            load_in_8bit=True if train_config.quantization else None,
+            quantization_config=quantization_config if train_config.quantization else None,
             device_map="auto" if train_config.quantization else None,
             use_cache=use_cache,
         )
@@ -121,7 +129,7 @@ def main(**kwargs):
 
     # Prepare the model for int8 training if quantization is enabled
     if train_config.quantization:
-        model = prepare_model_for_int8_training(model)
+        model = prepare_model_for_kbit_training(model)
 
     # Convert the model to bfloat16 if fsdp and pure_bf16 is enabled
     if train_config.enable_fsdp and fsdp_config.pure_bf16:

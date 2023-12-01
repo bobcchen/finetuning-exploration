@@ -8,7 +8,8 @@ import datasets
 
 
 def get_preprocessed_samsum(dataset_config, tokenizer, split):
-    dataset = datasets.load_dataset("samsum", cache_dir=dataset_config.cache_dir, split=split)
+    split_slice = '' if dataset_config.split_slice is None else f'[:{dataset_config.split_slice}]'
+    dataset = datasets.load_dataset("samsum", cache_dir=dataset_config.dataset_cache_dir, split=split+split_slice)
 
     prompt = (
         f"Summarize this dialog:\n{{dialog}}\n---\nSummary:\n"

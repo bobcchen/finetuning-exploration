@@ -6,13 +6,13 @@ from dataclasses import dataclass
 
 @dataclass
 class train_config:
-    model_name: str="../model-7b"
+    model_name: str="model-7b"
     enable_fsdp: bool=False
     low_cpu_fsdp: bool=False
     run_validation: bool=True
     batch_size_training: int=1
-    batching_strategy: str="packing" #alternative: padding
-    context_length: int=4096
+    batching_strategy: str="padding" #alternative: packing
+    context_length: int=4096 #specific to packing
     gradient_accumulation_steps: int=4
     num_epochs: int=3
     num_workers_dataloader: int=1
@@ -23,14 +23,14 @@ class train_config:
     use_fp16: bool=True
     mixed_precision: bool=True
     val_batch_size: int=1
-    dataset = "samsum_dataset"
+    dataset: str="samsum_dataset"
+    dataset_cache_dir: str="dataset"
     peft_method: str = "lora" # None , llama_adapter, prefix
     use_peft: bool=False
     output_dir: str = "outputs"
     freeze_layers: bool = False
     num_freeze_layers: int = 1
     quantization: bool = True
-    one_gpu: bool = False
     save_model: bool = False
     dist_checkpoint_root_folder: str="PATH/to/save/FSDP/model" # will be used if using FSDP
     dist_checkpoint_folder: str="fine-tuned" # will be used if using FSDP

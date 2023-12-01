@@ -9,7 +9,8 @@ class samsum_dataset:
     dataset: str =  "samsum_dataset"
     train_split: str = "train"
     test_split: str = "validation"
-    cache_dir: str = "../dataset"
+    dataset_cache_dir: str = "dataset"
+    split_slice: str = None # use to limit dataset size to prevent oom; 10 for 10 samples in split or 10% for 10% of samples in split
     
     
 @dataclass
