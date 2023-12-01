@@ -8,12 +8,8 @@ import datasets
 
 
 def get_preprocessed_samsum(dataset_config, tokenizer, split):
-    datafiles = {
-        'train': f'{dataset_config.dataset_path}/samsun_train.jsonl',
-        'validation': f'{dataset_config.dataset_path}/samsun_validation.jsonl'
-    }
     split_slice = '' if dataset_config.split_slice is None else f'[:{dataset_config.split_slice}]'
-    dataset = datasets.load_dataset("json", data_files=datafiles, split=split + split_slice)
+    dataset = datasets.load_dataset("json", data_files=f'{dataset_config.dataset_path}/samsun_{split}.jsonl', split='train'+split_slice)
 
     prompt = (
         f"Summarize this dialog:\n{{dialog}}\n---\nSummary:\n"
