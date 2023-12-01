@@ -14,6 +14,6 @@ COPY model-7b/ /app/model-7b/
 COPY model-13b/ /app/model-13b/
 COPY dataset/ /app/dataset/
 
-COPY Scripts/ /app/
+COPY src/ /app/
 
 CMD accelerate launch --config_file accelerate_1n_1g.yml peft_script.py
