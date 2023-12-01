@@ -16,4 +16,4 @@ COPY dataset/ /app/dataset/
 
 COPY src/ /app/
 
-CMD accelerate launch --config_file accelerate_1n_1g.yml peft_script.py
+CMD python3 finetuning.py --split_slice 1% --use_peft
