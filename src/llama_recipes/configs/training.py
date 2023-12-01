@@ -10,9 +10,8 @@ class train_config:
 
     # model related
     model_name: str="model-7b"
-    quantization: bool = True
+    quantization: bool = True # load_in_4bit or load_in_8bit; tentatively 4bit
     use_fp16: bool=True
-    mixed_precision: bool=True
     # full finetuning related use if not using PEFT
     freeze_layers: bool = False
     num_freeze_layers: int = 1
@@ -44,6 +43,7 @@ class train_config:
     # FDSP related
     enable_fsdp: bool=False
     low_cpu_fsdp: bool=False
+    mixed_precision: bool = True
     dist_checkpoint_root_folder: str="PATH/to/save/FSDP/model" # will be used if using FSDP
     dist_checkpoint_folder: str="fine-tuned" # will be used if using FSDP
     save_optimizer: bool=False # will be used if using FSDP
