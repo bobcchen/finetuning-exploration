@@ -34,6 +34,16 @@ python3 finetuning.py \
     --use_fp16 True
 ```
 
+LoRA PEFT of 7b in half precision results in CUDA OOM
+
+```
+python3 finetuning.py \
+    --split_slice 1% \
+    --use_peft \
+    --quantization False \
+    --use_fp16 True
+```
+
 Full finetuning of 7b in full/half precision results in CUDA OOM
 
 ```
@@ -85,7 +95,7 @@ torchrun \
     --nnodes 1 \
     --nproc_per_node 4 \
     finetuning.py \
-    --split_size 1% \
+    --split_slice 1% \
     --enable_fsdp \
     --quantization False \
     --use_fp16 True \
@@ -100,11 +110,54 @@ torchrun \
     --nnodes 1 \
     --nproc_per_node 4 \
     finetuning.py \
-    --split_size 1% \
+    --split_slice 1% \
     --enable_fsdp \
     --use_peft \
     --quantization False \
     --use_fp16 True \
 ```
 
+For FSDP, use 
 
+- `quantization=False` as quantization is not supported for FSDP
+- `use_fp16=False` in other words full precision to reduce memory usage
+
+However, 
+
+Full finetuning of 7b in full precision results in CUDA OOM, even decreasing samples to 10 `split_slice=10` results in CUDA OOM
+
+Model is successfully loaded across different GPUs (~10GB used per GPU), but when training starts CUDA OOM occurs, possibly due to the optimizer memory usage.
+
+```
+torchrun \
+    --nnodes 1 \
+    --nproc_per_node 4 \
+    finetuning.py \
+    --split_slice 1% \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 False \
+```
+
+Looking into FSDP parameters,
+
+- Sharding strategy by default is `FULL_SHARD` which shards all model parameters, optimizer and gradient states, which uses the least GPU memory
+- CPU offload (by default false) can be used to offload parameters to CPU when not involved in computation, saving GPU memory at the cost of CPU memory and speed
+
+Full finetuning of 7b in full precision with FSDP CPU_OFFLOAD works but results in OOM (killed by OS)
+
+From logs, CPU total peak memory consumed is 40GB/63GB
+
+From Grafana, ~8 cores used
+
+```
+torchrun \
+    --nnodes 1 \
+    --nproc_per_node 4 \
+    finetuning.py \
+    --split_slice 1% \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 False \
+    --fsdp_config.fsdp_cpu_offload True \
+```
