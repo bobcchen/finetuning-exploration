@@ -34,7 +34,15 @@ python3 finetuning.py \
     --use_fp16 True
 ```
 
-LoRA PEFT of 7b in half precision results in CUDA OOM
+LoRA PEFT of 7b in full/half precision results in CUDA OOM
+
+```
+python3 finetuning.py \
+    --split_slice 1% \
+    --use_peft \
+    --quantization False \
+    --use_fp16 False
+```
 
 ```
 python3 finetuning.py \
