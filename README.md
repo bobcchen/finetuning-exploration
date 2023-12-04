@@ -146,9 +146,8 @@ Looking into FSDP parameters,
 
 Full finetuning of 7b in full precision with FSDP CPU_OFFLOAD works but results in OOM (killed by OS)
 
-From logs, CPU total peak memory consumed is 40GB/63GB
-
-From Grafana, ~8 cores used
+- CPU Utilization: From logs, CPU total peak memory consumed is 40GB/63GB. From Grafana, ~8 cores used
+- GPU Utilization: From logs, GPU total peak memory is 17GB/18GB. From `nvidia-smi`, ~20GB used per GPU
 
 ```
 torchrun \
@@ -161,3 +160,18 @@ torchrun \
     --use_fp16 False \
     --fsdp_config.fsdp_cpu_offload True \
 ```
+
+After mounting host /dev/shm with 96Gi limit (refer to deployment.yml), trains successfully with 10 samples (minus error of saving model). If `split_slice=1%` same OOM issue.
+
+```
+torchrun \
+    --nnodes 1 \
+    --nproc_per_node 4 \
+    finetuning.py \
+    --split_slice 10 \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 False \
+    --fsdp_config.fsdp_cpu_offload True \
+```
+

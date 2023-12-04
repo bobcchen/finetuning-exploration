@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: llm-test
+  name: llm-test
+  annotations: {}
+spec:
+  selector:
+    matchLabels:
+      app: llm-test
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: llm-test
+    spec:
+      nodeName: <hidden>
+      containers:
+        - name: llm-test
+          image: llm-train
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c", "--"]
+          args: ["while true; do sleep 30; done;"]
+          volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
+          resources:
+            limits:
+              nvidia.com/gpu: 4
+            requests:
+              cpu: 500m
+              memory: 16Gi
+              nvidia.com/gpu: 4
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 96Gi
