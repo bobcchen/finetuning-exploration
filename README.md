@@ -185,4 +185,22 @@ torchrun \
     --fsdp_config.fsdp_cpu_offload True \
 ```
 
+After switching to SGD which uses less GPU Memory than AdamW,
 
+Full finetuning of 7b in full precision works, but there are CUDA Malloc retries
+
+- CPU Utilization: From logs, CPU total peak memory consumed is 4GB. From Grafana, ~8 cores used
+- GPU Utilization: From logs, GPU total peak memory is 29GB. From `nvidia-smi`, ~30GB used per GPU, which fluctuates between 26-32GB (limit) possibly due to the mallocs
+- CUDA Malloc retries ~32 per epoch
+
+```
+torchrun \
+    --nnodes 1 \
+    --nproc_per_node 4 \
+    finetuning.py \
+    --split_slice 1% \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 False \
+    --fsdp_config.optimizer SGD \
+```
