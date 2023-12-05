@@ -1,14 +1,16 @@
 FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update
-RUN apt-get install -y python3.10 
-RUN apt-get install -y python3-pip
+RUN apt-get update && apt-get install -y \
+    python3.10 \
+    python3-pip \
+    vim  \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir torch torchvision torchaudio torchviz --extra-index-url https://download.pytorch.org/whl/cu118
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY model-7b/ /app/model-7b/
 COPY model-13b/ /app/model-13b/
@@ -16,4 +18,4 @@ COPY dataset/ /app/dataset/
 
 COPY src/ /app/
 
-CMD python3 finetuning.py --split_slice 1% --use_peft
+CMD python3 finetuning.py --split_slice 1% --use_peft --quantization
