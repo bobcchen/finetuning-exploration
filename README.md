@@ -12,7 +12,7 @@ Output folder at `model-7b` and `model-13b`
 
 # Dataset
 
-Download `samsun` dataset to `dataset`
+Download `samsun` dataset to `dataset` folder
 
 ```
 from datasets import load_dataset
@@ -128,7 +128,7 @@ torchrun \
 For FSDP, use 
 
 - `quantization=False` as quantization is not supported for FSDP
-~~- `use_fp16=False` in other words full precision to reduce memory usage~~ Proven wrong
+- ~~`use_fp16=False` in other words full precision to reduce memory usage~~ Proven wrong
 
 However, 
 
