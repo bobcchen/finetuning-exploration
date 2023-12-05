@@ -128,7 +128,7 @@ torchrun \
 For FSDP, use 
 
 - `quantization=False` as quantization is not supported for FSDP
-- `use_fp16=False` in other words full precision to reduce memory usage
+~~- `use_fp16=False` in other words full precision to reduce memory usage~~ Proven wrong
 
 However, 
 
@@ -169,8 +169,6 @@ torchrun \
     --fsdp_config.fsdp_cpu_offload True \
 ```
 
-~~After mounting host /dev/shm with 96Gi limit (refer to deployment.yml)~~ Mounting /dev/shm does not help.
-
 Trains successfully with 10 samples.
 
 ```
@@ -202,5 +200,22 @@ torchrun \
     --enable_fsdp \
     --quantization False \
     --use_fp16 False \
+    --fsdp_config.optimizer SGD \
+```
+
+Full finetuning of 7b in half precision works with no issues!
+
+- CPU Utilization: From logs, CPU total peak memory consumed is 4GB. From Grafana, ~8 cores used
+- GPU Utilization: From logs, GPU total peak memory is 25GB. From `nvidia-smi`, ~28GB used per GPU
+
+```
+torchrun \
+    --nnodes 1 \
+    --nproc_per_node 4 \
+    finetuning.py \
+    --split_slice 1% \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 True \
     --fsdp_config.optimizer SGD \
 ```
