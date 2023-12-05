@@ -8,7 +8,7 @@ Download official Llama2 from Meta, specifically the 7b and 13b variants.
 
 Use https://github.com/huggingface/transformers/blob/main/src/transformers/models/llama/convert_llama_weights_to_hf.py to convert to hf format
 
-Output folder at and `model-7b` and `model-13b`
+Output folder at `model-7b` and `model-13b`
 
 # Dataset
 
