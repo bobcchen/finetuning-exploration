@@ -169,7 +169,9 @@ torchrun \
     --fsdp_config.fsdp_cpu_offload True \
 ```
 
-After mounting host /dev/shm with 96Gi limit (refer to deployment.yml), trains successfully with 10 samples (minus error of saving model). If `split_slice=1%` same OOM issue.
+~~After mounting host /dev/shm with 96Gi limit (refer to deployment.yml)~~ Mounting /dev/shm does not help.
+
+Trains successfully with 10 samples.
 
 ```
 torchrun \
@@ -182,4 +184,5 @@ torchrun \
     --use_fp16 False \
     --fsdp_config.fsdp_cpu_offload True \
 ```
+
 

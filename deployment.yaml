@@ -21,9 +21,6 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c", "--"]
           args: ["while true; do sleep 30; done;"]
-          volumeMounts:
-            - mountPath: /dev/shm
-              name: dshm
           resources:
             limits:
               nvidia.com/gpu: 4
@@ -31,8 +28,3 @@ spec:
               cpu: 500m
               memory: 16Gi
               nvidia.com/gpu: 4
-      volumes:
-        - name: dshm
-          emptyDir:
-            medium: Memory
-            sizeLimit: 96Gi
