@@ -219,3 +219,16 @@ torchrun \
     --use_fp16 True \
     --fsdp_config.optimizer SGD \
 ```
+
+Of course, the full dataset can be used to train
+
+```
+torchrun \
+    --nnodes 1 \
+    --nproc_per_node 4 \
+    finetuning.py \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 True \
+    --fsdp_config.optimizer SGD \
+```
