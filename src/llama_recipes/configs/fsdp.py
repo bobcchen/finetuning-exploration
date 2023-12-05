@@ -15,5 +15,5 @@ class fsdp_config:
     fsdp_activation_checkpointing: bool=True
     fsdp_cpu_offload: bool=False
     pure_bf16: bool = False
-    optimizer: str= "AdamW"
+    optimizer: str= "AdamW" # or "SGD" with smaller GPU memory footprint
     

@@ -225,11 +225,20 @@ def main(**kwargs):
             weight_decay=train_config.weight_decay,
         )
     else:
-        optimizer = optim.AdamW(
-            model.parameters(),
-            lr=train_config.lr,
-            weight_decay=train_config.weight_decay,
-        )
+        if fsdp_config.optimizer == "AdamW":
+            optimizer = optim.AdamW(
+                model.parameters(),
+                lr=train_config.lr,
+                weight_decay=train_config.weight_decay,
+            )
+        elif fsdp_config.optimizer == "SGD":
+            optimizer = optim.SGD(
+                model.parameters(),
+                lr=train_config.lr,
+                momentum=train_config.momentum,
+            )
+        else:
+            raise NotImplementedError(f'{fsdp_config.optimizer} not implemented, use one of ["AdamW", "SGD"] for fsdp_config.optimizer')
     scheduler = StepLR(optimizer, step_size=1, gamma=train_config.gamma)
 
     # Start the training process

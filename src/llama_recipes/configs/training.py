@@ -32,9 +32,10 @@ class train_config:
     batch_size_training: int=1
     gradient_accumulation_steps: int=4
     num_epochs: int=3
-    lr: float=1e-4
-    weight_decay: float=0.0
-    gamma: float= 0.85
+    lr: float=1e-4 # for SGD and AdamW
+    momentum: float=0.9 # for SGD
+    weight_decay: float=0.0  # for AdamW
+    gamma: float= 0.85  # for StepLR
     run_validation: bool=True
     val_batch_size: int=1
     save_model: bool = False
