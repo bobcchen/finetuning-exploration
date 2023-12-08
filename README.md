@@ -232,3 +232,48 @@ torchrun \
     --use_fp16 True \
     --fsdp_config.optimizer SGD \
 ```
+
+For 13b, it is not possible to train using 4x32GB, however, we can load the model to see FSDP GPU utilization.
+
+For any `n`b model, it will require `4n`GB VRAM if loaded in full precision using a single GPU.
+
+For ONLY loading of model in full precision:
+- 7b:
+  - 1 GPU: 28GB
+  - 4 GPUs: ~40GB (10GB per device)
+- 13b:
+  - 1 GPU: 52GB
+  - 4 GPUs: ~80GB (20GB per device)
+
+When only the `model_name=model-13b` was specified, the process is killed due to OOM, as all 4 processes will attempt to load 
+the 13b model into RAM (13 * 4 * 4GB).
+
+```
+torchrun \
+    --nnodes 1 \
+    --nproc_per_node 4 \
+    finetuning.py \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 True \
+    --fsdp_config.optimizer SGD \
+    --model_name model-13b \
+```
+
+`low_cpu_fsdp=True` needs to be specified as well, so that only the 0 rank process will load the model into RAM, and 
+subsequently GPU, while the other processes will directly read from GPU. Note that from `nvidia-smi`, when the model 
+is loaded, the utilization of GPU 0 is ~20GB (correct), and that of GPUs 1, 2, 3 are ~32GB (max) due to the preallocation,
+which will be freed up when training starts.
+
+```
+torchrun \
+    --nnodes 1 \
+    --nproc_per_node 4 \
+    finetuning.py \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 True \
+    --fsdp_config.optimizer SGD \
+    --model_name model-13b \
+    --low_cpu_fsdp True \
+```
