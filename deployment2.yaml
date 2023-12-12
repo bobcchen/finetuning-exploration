@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: llm-test
+  name: llm-test-2
+  annotations: {}
+spec:
+  selector:
+    matchLabels:
+      app: llm-test-2
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: llm-test-2
+    spec:
+      nodeName: node1
+      containers:
+        - name: llm-test-2
+          image: llm-train
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c", "--"]
+          args: ["while true; do sleep 30; done;"]
+          # torchrun --nnodes 2 --nproc_per_node 2 --rdzv-id=123 --rdzv-backend=etcd-v2 --rdzv-endpoint=etcd-server.llm-test.svc.cluster.local:2379 finetuning.py --enable_fsdp --quantization False --use_fp16 True --fsdp_config.optimizer SGD --split_slice 1%
+          resources:
+            limits:
+              nvidia.com/gpu: 4
+            requests:
+              cpu: 500m
+              memory: 16Gi
+              nvidia.com/gpu: 4
