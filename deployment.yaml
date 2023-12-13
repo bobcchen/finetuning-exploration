@@ -21,7 +21,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c", "--"]
           args: ["while true; do sleep 30; done;"]
-          # torchrun --nnodes 2 --nproc_per_node 2 --rdzv-id=123 --rdzv-backend=etcd-v2 --rdzv-endpoint=etcd-server.llm-test.svc.cluster.local:2379 finetuning.py --enable_fsdp --quantization False --use_fp16 True --fsdp_config.optimizer SGD --split_slice 1%
+          # torchrun --nnodes 2 --nproc_per_node 2 --rdzv-id=123 --rdzv-backend=c10d --rdzv-endpoint=llm-test.llm-test.svc.cluster.local:29500 --local_addr llm-test.llm-test.svc.cluster.local finetuning.py --enable_fsdp --quantization False --use_fp16 True --fsdp_config.optimizer SGD --split_slice 1%
           resources:
             limits:
               nvidia.com/gpu: 4
@@ -33,64 +33,15 @@ spec:
 ---
 
 apiVersion: v1
-kind: Pod
-metadata:
-  namespace: llm-test
-  labels:
-    app: llm-test-etcd
-  name: etcd-server
-spec:
-  nodeName: node0
-  containers:
-    - command:
-        - /usr/local/bin/etcd
-        - --data-dir
-        - /var/lib/etcd
-        - --enable-v2
-        - --name
-        - etcd-server
-        - --initial-advertise-peer-urls
-        - http://etcd-server:2380
-        - --listen-peer-urls
-        - http://0.0.0.0:2380
-        - --listen-client-urls
-        - http://0.0.0.0:2379
-        - --advertise-client-urls
-        - http://etcd-server:2379
-        - --initial-cluster
-        - etcd-server=http://etcd-server:2380
-        - --initial-cluster-state
-        - new
-      image: quay.io/coreos/etcd:v3.5.10-amd64
-      imagePullPolicy: IfNotPresent
-      name: etcd-server
-      ports:
-        - containerPort: 2379
-          name: client
-          protocol: TCP
-        - containerPort: 2380
-          name: server
-          protocol: TCP
-  restartPolicy: Always
-
----
-
-apiVersion: v1
 kind: Service
 metadata:
   namespace: llm-test
-  labels:
-    app: llm-test-etcd
-  name: etcd-server
+  name: llm-test
 spec:
+  clusterIP: None
   ports:
-    - name: client
-      port: 2379
+    - name: c10d
+      port: 29500
       protocol: TCP
-      targetPort: 2379
-    - name: server
-      port: 2380
-      protocol: TCP
-      targetPort: 2380
   selector:
-    app: llm-test-etcd
+    app: llm-test
