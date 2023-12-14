@@ -80,9 +80,6 @@ Full finetuning of quantized 7b (`load_in_4bit=True`) in half precision results 
 
 `AssertionError: No inf checks were recorded for this optimizer.`
 
-https://pytorch.org/docs/stable/notes/amp_examples.html#gradient-accumulation
-
-
 ```
 python3 finetuning.py \
     --split_slice 1% \
@@ -255,7 +252,7 @@ torchrun \
     finetuning.py \
     --enable_fsdp \
     --quantization False \
-    --use_fp16 True \
+    --use_fp16 False \
     --fsdp_config.optimizer SGD \
     --model_name model-13b \
 ```
@@ -272,8 +269,114 @@ torchrun \
     finetuning.py \
     --enable_fsdp \
     --quantization False \
-    --use_fp16 True \
+    --use_fp16 False \
     --fsdp_config.optimizer SGD \
     --model_name model-13b \
     --low_cpu_fsdp True \
 ```
+
+## Multi node multi V100 (32GB) GPU
+
+To perform multi-node training, pytorch uses a mechanism for distributed synchronization called [rendezvous](https://pytorch.org/docs/stable/elastic/rendezvous.html).
+The k8s cluster setup is 2 nodes, each with 4 V100 GPUs. A pod will be created in each of the nodes, and they must be able
+to reach a common rendezvous endpoint.
+
+Initially etcd-v2 was used (refer to this [commit](https://github.com/bobcchen/peft-explore/commit/5c3f210fec9b90f82824b05329e48a912dffc960)) as the rdzv backend, 
+referencing this [comment](https://github.com/pytorch/pytorch/issues/65992#issuecomment-954382747). The rdzv endpoint is
+the client endpoint of the etcd server `etcd-server.llm-test.svc.cluster.local:2379`. However, there were still issues resolving
+the IP addresses of the pods, as indicated by the error `(<pod name>, <random port>) cannot be resolved`. A workaround is to
+add the explicit IP address of `<pod name>` to `/etc/hosts` of the pod displaying that error. This was not clean enough
+as the pod IP is not known before it is created.
+
+Instead, we can use a headless k8s service to resolve the IP address of the pods. Note that the service url needs to be
+passed explicitly using the `--local_addr` flag to `torchrun`. In addition, to remove the external dependency of etcd, 
+we can use c10d as the rdzv backend, as recommended by pytorch. Refer to deployment.yaml and deployment2.yaml. After applying,
+we get:
+
+![infra-diagram.png](./images/infra-diagram.png)
+
+Note that rdzv goes through the respective services for both pods, even for llm-test.
+
+With the deployments in place, full finetuning of 7b can be performed across the 2 nodes, utilizing 2 GPUs from each node.
+
+In the first pod (llm-test):
+
+```
+torchrun \
+    --nnodes 2 \
+    --nproc_per_node 2 \
+    --rdzv-id=123 \
+    --rdzv-endpoint=llm-test.llm-test.svc.cluster.local:29500 \
+    --rdzv-backend=c10d \
+    --local_addr llm-test.llm-test.svc.cluster.local \
+    finetuning.py \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 True \
+    --fsdp_config.optimizer SGD \
+    --split_slice 1% \
+```
+
+In the second pod (llm-test-2):
+
+```
+torchrun \
+    --nnodes 2 \
+    --nproc_per_node 2 \
+    --rdzv-id=123 \
+    --rdzv-endpoint=llm-test.llm-test.svc.cluster.local:29500 \
+    --rdzv-backend=c10d \
+    --local_addr llm-test-2.llm-test.svc.cluster.local \
+    finetuning.py \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 True \
+    --fsdp_config.optimizer SGD \
+    --split_slice 1% \
+```
+
+GPU utilization (peak ~25GB per device) is the same as the 1 node 4 GPU setup. Training and validation perplexity/loss
+are the same as the 1 node 4 GPU setup as well. However, training time was much longer (average time per epoch of 1487s vs 27s for only 100+ samples),
+due to the rdvz process done over network.
+
+Despite the slow training, it is now possible to do full finetuning of the 13b, using minimally 3 GPUs from each node.
+
+```
+torchrun \
+    --nnodes 2 \
+    --nproc_per_node 3 \
+    --rdzv-id=234 \
+    --rdzv-endpoint=llm-test.llm-test.svc.cluster.local:29500 \
+    --rdzv-backend=c10d \
+    --local_addr llm-test.llm-test.svc.cluster.local \
+    finetuning.py \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 True \
+    --fsdp_config.optimizer SGD \
+    --split_slice 1% \
+    --model_name model-13b \
+```
+
+```
+torchrun \
+    --nnodes 2 \
+    --nproc_per_node 3 \
+    --rdzv-id=234 \
+    --rdzv-endpoint=llm-test.llm-test.svc.cluster.local:29500 \
+    --rdzv-backend=c10d \
+    --local_addr llm-test-2.llm-test.svc.cluster.local \
+    finetuning.py \
+    --enable_fsdp \
+    --quantization False \
+    --use_fp16 True \
+    --fsdp_config.optimizer SGD \
+    --split_slice 1% \
+    --model_name model-13b \
+```
+
+Training successfully completes with high GPU utilization (peak ~30-32GB per device, with cuda mallocs) and an average 
+time per epoch of 2119s. Surprisingly there was no OOM caused by the 3 processes loading the model into RAM per node.
+
+Based on the training speeds, it might be faster to make do with a single node setup (multi gpu with offload to cpu) to train,
+due to high cost of internode synchronization. 
